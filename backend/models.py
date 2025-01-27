@@ -49,22 +49,11 @@ class Facility(models.Model):
 
 class Work(models.Model):
     CLASSIFICATION_CHOICES = (
-        ('FAULT', 'Fault'),
-        ('UPGRADE', 'Upgrade'),
-        ('WORK', 'Work'),
-        ('GENERAL', 'General'),
+        ('FAULT', 'תקלה'),
+        ('UPGRADE', 'שדרוג'),
+        ('WORK', 'תחזוקה'),
+        ('GENERAL', 'כללי'),
     )
-
-    # STATUS_CHOICES = (
-    #     ('PENDING_APPROVAL', 'Pending Approval'),
-    #     ('APPROVED', 'Approved'),
-    #     ('IN_PROGRESS', 'In Progress'),
-    #     ('COMPLETED_BY_CONTRACTOR', 'Completed by Contractor'),
-    #     ('WAITING_MANAGER_APPROVAL', 'Waiting for Manager Approval'),
-    #     ('FINISHED', 'Finished'),
-    #     ('WAITING_PAYMENT', 'Waiting for Payment'),
-    #     ('PAID', 'Paid'),
-    # )
 
     STATUS_CHOICES = (
         ('PENDING', 'ממתין'),

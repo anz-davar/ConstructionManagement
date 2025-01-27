@@ -100,6 +100,7 @@ class WorkSerializer(serializers.ModelSerializer):
     manager_name = serializers.CharField(source='manager.username', read_only=True)
     facility_name = serializers.CharField(source='facility.name', read_only=True)
     phone_number = serializers.CharField(source='contractor.phone_number', read_only=True)
+    classification_display = serializers.CharField(source='get_classification_display')
 
     class Meta:
         model = Work
