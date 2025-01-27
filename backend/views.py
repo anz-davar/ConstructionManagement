@@ -75,7 +75,7 @@ class WorkViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def classifications(self, request):  # Create new action for classifications
-        classifications = [choice[0] for choice in Work.CLASSIFICATION_CHOICES]
+        classifications = {choice[0]: choice[1] for choice in Work.CLASSIFICATION_CHOICES}
         return Response(classifications)
 
     @action(detail=True, methods=['patch'])
@@ -208,6 +208,20 @@ class WorkViewSet(viewsets.ModelViewSet):
             ).order_by('-overall_avg')[:10]
             return Response(top_contractors)
 
+        elif report_type == 'contractorsWorst':
+            worst_contractors = queryset.values('contractor__username', 'contractor__first_name',
+                                                'contractor__last_name').annotate(
+                avg_quality=Avg('quality_score'),
+                avg_time=Avg('time_score'),
+                avg_cost=Avg('cost_score'),
+                overall_avg=Avg(
+                    (
+                            F('quality_score') + F('time_score') + F('cost_score')
+                    ) / 3.0
+                )
+            ).order_by('overall_avg')[:10]  # Order by ascending (worst first)
+            return Response(worst_contractors)
+
         elif report_type == 'works':
             finished_statuses = ['FINISHED', 'PAID', 'WAITING_PAYMENT']
             active_works_count = Work.objects.exclude(status__in=finished_statuses).count()
@@ -245,7 +259,7 @@ class WorkItemViewSet(viewsets.ModelViewSet):
                 return WorkItem.objects.all()
             elif user.role == 'MANAGER':
                 return WorkItem.objects.filter(work__manager=user)
-            elif user.role in  ['CONTRACTOR','CONTRACTOR_VIEWER']:
+            elif user.role in ['CONTRACTOR', 'CONTRACTOR_VIEWER']:
                 return WorkItem.objects.filter(work__contractor__idNum=user.idNum)
         return WorkItem.objects.none()
 
