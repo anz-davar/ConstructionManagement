@@ -70,29 +70,32 @@ class UserSerializer(serializers.ModelSerializer):
 
 class NestedWorkItemSerializer(serializers.ModelSerializer):
     total_section_cost = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta:
         model = WorkItem
         fields = ['id', 'section', 'description', 'contract_amount', 'actual_amount', 'unit_cost', 'status',
-                  'work_type', 'total_section_cost']
+                  'work_type', 'total_section_cost','status_display']
 
 
 class WorkItemSerializer(serializers.ModelSerializer):
     total_section_cost = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     work = serializers.PrimaryKeyRelatedField(queryset=Work.objects.all())  # This is the key change
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     # work_number = serializers.CharField(source='work.work_number', read_only=True)
 
     class Meta:
         model = WorkItem
         fields = ['id', 'section', 'description', 'contract_amount', 'actual_amount', 'unit_cost', 'status',
-                  'work_type', 'total_section_cost', 'work']
+                  'work_type', 'total_section_cost', 'work','status_display']
 
 
 class WorkSerializer(serializers.ModelSerializer):
     items = NestedWorkItemSerializer(many=True, required=False)
     # items = WorkItemSerializer(many=True, required=False)  # Remove `read_only=True`
     average_score = serializers.FloatField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     contractor_name = serializers.CharField(source='contractor.username', read_only=True)
     manager_name = serializers.CharField(source='manager.username', read_only=True)
@@ -144,6 +147,7 @@ class WorkSerializer(serializers.ModelSerializer):
         return instance
 
 
+
 class FacilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Facility
@@ -160,5 +164,5 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = '__all__'  # Or specify the fields you want to expose
-        #If you want to make work read only
-        #extra_kwargs = {'work': {'read_only': True}}
+        # If you want to make work read only
+        # extra_kwargs = {'work': {'read_only': True}}

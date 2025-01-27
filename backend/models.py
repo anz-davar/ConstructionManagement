@@ -41,7 +41,6 @@ class User(AbstractUser):
 #     created_at = models.DateTimeField(auto_now_add=True)
 
 
-
 class Facility(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField()
@@ -56,15 +55,22 @@ class Work(models.Model):
         ('GENERAL', 'General'),
     )
 
+    # STATUS_CHOICES = (
+    #     ('PENDING_APPROVAL', 'Pending Approval'),
+    #     ('APPROVED', 'Approved'),
+    #     ('IN_PROGRESS', 'In Progress'),
+    #     ('COMPLETED_BY_CONTRACTOR', 'Completed by Contractor'),
+    #     ('WAITING_MANAGER_APPROVAL', 'Waiting for Manager Approval'),
+    #     ('FINISHED', 'Finished'),
+    #     ('WAITING_PAYMENT', 'Waiting for Payment'),
+    #     ('PAID', 'Paid'),
+    # )
+
     STATUS_CHOICES = (
-        ('PENDING_APPROVAL', 'Pending Approval'),
-        ('APPROVED', 'Approved'),
-        ('IN_PROGRESS', 'In Progress'),
-        ('COMPLETED_BY_CONTRACTOR', 'Completed by Contractor'),
-        ('WAITING_MANAGER_APPROVAL', 'Waiting for Manager Approval'),
-        ('FINISHED', 'Finished'),
-        ('WAITING_PAYMENT', 'Waiting for Payment'),
-        ('PAID', 'Paid'),
+        ('PENDING', 'ממתין'),
+        ('IN_PROGRESS', 'בביצוע'),
+        ('WAITING_PAYMENT', 'ממתין לתשלום'),
+        ('PAID', 'שולם'),
     )
 
     work_number = models.CharField(max_length=50, unique=True)
@@ -81,7 +87,7 @@ class Work(models.Model):
     location_name = models.CharField(max_length=200)
     remarks = models.TextField(blank=True)
 
-    #ratings
+    # ratings
     quality_score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)], null=True, blank=True)
     time_score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)], null=True, blank=True)
     cost_score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)], null=True, blank=True)
@@ -89,13 +95,12 @@ class Work(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
     @property
     def average_score(self):
         scores = [self.quality_score, self.time_score, self.cost_score]
         valid_scores = [score for score in scores if score is not None]
         if valid_scores:
-            return round(sum(valid_scores) / len(valid_scores),1)
+            return round(sum(valid_scores) / len(valid_scores), 1)
         return 0
 
 
@@ -106,7 +111,6 @@ class WorkItem(models.Model):
     #     ('QUALITY_CONTROL', 'Quality Control'),
     #     ('COMPLETED', 'Completed'),
     # )
-
 
     STATUS_CHOICES = (
         ('PENDING', 'ממתין'),
@@ -135,13 +139,15 @@ class WorkItem(models.Model):
 
 
 class Payment(models.Model):
-    work = models.ForeignKey(Work, on_delete=models.CASCADE, related_name='payments') # ForeignKey to Work
+    work = models.ForeignKey(Work, on_delete=models.CASCADE, related_name='payments')  # ForeignKey to Work
     invoice_number = models.CharField(max_length=50, blank=True, null=True)
-    payment_account_details = models.TextField(blank=True, null=True) # Details of the account
+    payment_account_details = models.TextField(blank=True, null=True)  # Details of the account
     payment_date = models.DateField()
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_manager = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='made_payments', null=True, blank=True) # User who made the payment
-    approval_manager = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='approved_payments', null=True, blank=True)
+    payment_manager = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='made_payments', null=True,
+                                        blank=True)  # User who made the payment
+    approval_manager = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='approved_payments', null=True,
+                                         blank=True)
     payment_terms = models.TextField(blank=True, null=True)
 
     def __str__(self):

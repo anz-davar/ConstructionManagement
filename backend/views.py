@@ -26,10 +26,12 @@ class WorkViewSet(viewsets.ModelViewSet):
         queryset = Work.objects.all()
 
         # Filter based on user role
-        if user.role == 'CONTRACTOR':
-            return queryset.filter(contractor=user)
-        elif user.role in ['MANAGER', 'GENERAL_ENGINEER', 'SUPER_ADMIN']:
+        if user.role in ['CONTRACTOR', 'CONTRACTOR_VIEWER']:
+            return queryset.filter(contractor__idNum=user.idNum)
+        elif user.role in ['GENERAL_ENGINEER', 'SUPER_ADMIN']:
             return queryset  # Full access
+        elif user.role == 'MANAGER':
+            return queryset.filter(manager=user)
         elif user.role == 'PAYMENT_ADMIN':
             return queryset  # Read-only, for filtering later in permissions
 
@@ -52,8 +54,13 @@ class WorkViewSet(viewsets.ModelViewSet):
         if user.role == 'CONTRACTOR' and work.contractor != user:
             raise PermissionDenied("You can only edit your own works.")
         if user.role == 'PAYMENT_ADMIN':
-            raise PermissionDenied("You are not allowed to update works.")
-
+            if set(serializer.validated_data.keys()) != {'status'} or serializer.validated_data['status'] != 'PAID':
+                return Response(
+                    {"error": "PAYMENT_ADMIN can only update status to 'PAID'."},
+                    status=403
+                )
+        if user.role in ['CONTRACTOR_VIEWER']:
+            raise PermissionDenied("You do not have permission to update works.")
         # Allow other roles to update
         serializer.save()
 
@@ -212,6 +219,11 @@ class WorkViewSet(viewsets.ModelViewSet):
             })
         return Response({'error': 'Invalid report type'}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['get'])
+    def work_statuses(self, request):
+        statuses = [{'code': code, 'label': label} for code, label in Work.STATUS_CHOICES]
+        return Response(statuses)
+
 
 class WorkItemViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
@@ -228,22 +240,19 @@ class WorkItemViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated:
-            if user.role in ['MANAGER', 'GENERAL_ENGINEER', 'SUPER_ADMIN',
+            if user.role in ['GENERAL_ENGINEER', 'SUPER_ADMIN',
                              'PAYMENT_ADMIN']:  # Updated to match uppercase role names
                 return WorkItem.objects.all()
-            elif user.role == 'CONTRACTOR':
-                return WorkItem.objects.filter(work__contractor=user)
+            elif user.role == 'MANAGER':
+                return WorkItem.objects.filter(work__manager=user)
+            elif user.role in  ['CONTRACTOR','CONTRACTOR_VIEWER']:
+                return WorkItem.objects.filter(work__contractor__idNum=user.idNum)
         return WorkItem.objects.none()
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     # If user is a manager or general engineer, return all work items
-    #     if user.role in ['manager', 'general_engineer', 'super_admin']:
-    #         return WorkItem.objects.all()
-    #     # If user is a contractor, return only their work items
-    #     elif user.role == 'contractor':
-    #         return WorkItem.objects.filter(work__contractor=user)
-    #     # For other roles or unauthenticated users, return empty queryset
-    #     return WorkItem.objects.none()
+
+    @action(detail=False, methods=['get'])
+    def work_item_statuses(self, request):
+        statuses = [{'code': code, 'label': label} for code, label in WorkItem.STATUS_CHOICES]
+        return Response(statuses)
 
 
 class FacilityViewSet(viewsets.ModelViewSet):
