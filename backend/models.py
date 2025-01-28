@@ -141,3 +141,14 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment for Work: {self.work.work_number}, Amount: {self.amount_paid}"
+
+
+class Comment(models.Model):
+    work = models.ForeignKey(Work, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']

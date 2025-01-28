@@ -1,6 +1,6 @@
 from rest_framework import serializers
 # from .models import User, Work, WorkItem, Facility, ContractorRating
-from .models import User, Work, WorkItem, Facility, Payment
+from .models import User, Work, WorkItem, Facility, Payment, Comment
 from django.contrib.auth import get_user_model
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import UserDetailsSerializer
@@ -74,7 +74,7 @@ class NestedWorkItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkItem
         fields = ['id', 'section', 'description', 'contract_amount', 'actual_amount', 'unit_cost', 'status',
-                  'work_type', 'total_section_cost','status_display']
+                  'work_type', 'total_section_cost', 'status_display']
 
 
 class WorkItemSerializer(serializers.ModelSerializer):
@@ -87,7 +87,7 @@ class WorkItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkItem
         fields = ['id', 'section', 'description', 'contract_amount', 'actual_amount', 'unit_cost', 'status',
-                  'work_type', 'total_section_cost', 'work','status_display']
+                  'work_type', 'total_section_cost', 'work', 'status_display']
 
 
 class WorkSerializer(serializers.ModelSerializer):
@@ -100,7 +100,7 @@ class WorkSerializer(serializers.ModelSerializer):
     manager_name = serializers.CharField(source='manager.username', read_only=True)
     facility_name = serializers.CharField(source='facility.name', read_only=True)
     phone_number = serializers.CharField(source='contractor.phone_number', read_only=True)
-    classification_display = serializers.CharField(source='get_classification_display')
+    classification_display = serializers.CharField(source='get_classification_display', read_only=True)
 
     class Meta:
         model = Work
@@ -147,7 +147,6 @@ class WorkSerializer(serializers.ModelSerializer):
         return instance
 
 
-
 class FacilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Facility
@@ -166,3 +165,17 @@ class PaymentSerializer(serializers.ModelSerializer):
         fields = '__all__'  # Or specify the fields you want to expose
         # If you want to make work read only
         # extra_kwargs = {'work': {'read_only': True}}
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    user_name = serializers.SerializerMethodField()
+    user = serializers.PrimaryKeyRelatedField(read_only=True) # Add this back for the ID
+    work = serializers.PrimaryKeyRelatedField(read_only=True)  # Add this line - crucial!
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'work', 'user', 'user_name', 'text', 'created_at']
+        read_only_fields = ['user', 'created_at','work']
+
+    def get_user_name(self, obj):
+        return obj.user.get_full_name() or obj.user.username

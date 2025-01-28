@@ -9,10 +9,10 @@ from django.utils import timezone
 from datetime import datetime
 from .permissions import ContractorPermission
 # from .models import User, Work, WorkItem, Facility, ContractorRating
-from .models import User, Work, WorkItem, Facility, Payment
+from .models import User, Work, WorkItem, Facility, Payment, Comment
 from .serializers import (
     UserSerializer, WorkSerializer, WorkItemSerializer,
-    FacilitySerializer, NestedWorkItemSerializer, UserRoleSerializer, PaymentSerializer
+    FacilitySerializer, NestedWorkItemSerializer, UserRoleSerializer, PaymentSerializer, CommentSerializer
     # FacilitySerializer, ContractorRatingSerializer, NestedWorkItemSerializer, UserRoleSerializer
 )
 
@@ -340,3 +340,32 @@ class PaymentViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class CommentViewSet(viewsets.ModelViewSet):
+#     serializer_class = CommentSerializer
+#     permission_classes = [IsAuthenticated]
+#
+#     def get_queryset(self):
+#         return Comment.objects.filter(work_id=self.kwargs['work_pk'])
+#
+#     def perform_create(self, serializer):
+#         work_id = self.kwargs['work_pk']  # Get work_id from URL
+#         serializer.save(
+#             user=self.request.user,
+#             work_id=work_id  # Use work_id from URL
+#         )
+class CommentViewSet(viewsets.ModelViewSet):
+
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        print(f"self.kwargs: {self.kwargs}")  # Print kwargs for debugging
+        work_id = self.kwargs['work_pk']
+        print(f"work_id: {work_id}")  # Print work_id for debugging
+        return Comment.objects.filter(work_id=work_id).order_by('created_at')
+
+    def perform_create(self, serializer):
+        work_id = self.kwargs['work_pk']
+        print(f"work_id (in perform_create): {work_id}")  # Print in perform_create too
+        serializer.save(user=self.request.user, work_id=work_id)
