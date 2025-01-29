@@ -233,9 +233,34 @@ class WorkViewSet(viewsets.ModelViewSet):
             })
         return Response({'error': 'Invalid report type'}, status=status.HTTP_400_BAD_REQUEST)
 
+    # @action(detail=False, methods=['get'])
+    # def work_statuses(self, request):
+    #     statuses = [{'code': code, 'label': label} for code, label in Work.STATUS_CHOICES]
+    #     return Response(statuses)
     @action(detail=False, methods=['get'])
     def work_statuses(self, request):
-        statuses = [{'code': code, 'label': label} for code, label in Work.STATUS_CHOICES]
+        user = request.user
+        role = user.role  # Or however you access the user's role
+
+        statuses = []
+
+        for code, label in Work.STATUS_CHOICES:
+            status_data = {'code': code, 'label': label, 'chosable': False}  # Default: not chosable
+
+            if user.is_superuser or user.role == 'GENERAL_ENGINEER':
+                status_data['chosable'] = True
+            elif role == 'CONTRACTOR':  # Example roles - adjust as needed
+                if code in ['PENDING', 'IN_PROGRESS']:  # Example: Contractor can change these
+                    status_data['chosable'] = True
+            elif role == 'MANAGER':
+                if code not in ['PAID', 'WAITING_PAYMENT']:  # Example: Manager can change all except PAID
+                    status_data['chosable'] = True
+            elif role == 'PAYMENT_ADMIN':
+                if code in ['WAITING_PAYMENT', 'PAID']:  # Example: Payment Admin can change these
+                    status_data['chosable'] = True
+
+            statuses.append(status_data)
+
         return Response(statuses)
 
 
@@ -263,9 +288,38 @@ class WorkItemViewSet(viewsets.ModelViewSet):
                 return WorkItem.objects.filter(work__contractor__idNum=user.idNum)
         return WorkItem.objects.none()
 
+    # @action(detail=False, methods=['get'])
+    # def work_item_statuses(self, request):
+    #     statuses = [{'code': code, 'label': label} for code, label in WorkItem.STATUS_CHOICES]
+    #     return Response(statuses)
+
     @action(detail=False, methods=['get'])
     def work_item_statuses(self, request):
-        statuses = [{'code': code, 'label': label} for code, label in WorkItem.STATUS_CHOICES]
+        user = request.user
+        role = user.role
+        statuses = []
+
+        for code, label in WorkItem.STATUS_CHOICES:
+            status_data = {'code': code, 'label': label, 'chosable': False}  # Default: not chosable
+
+            if user.is_superuser:
+                status_data['chosable'] = True
+            elif role == 'CONTRACTOR':
+                if code in ['IN_PROGRESS', 'COMPLETED_BY_CONTRACTOR']:
+                    status_data['chosable'] = True
+            elif role == 'CONTRACTOR_VIEWER':
+                pass  # Default is false, so no need to change
+            elif role == 'MANAGER':
+                if code not in ['WAITING_PAYMENT', 'PAID']:
+                    status_data['chosable'] = True
+            elif role == 'GENERAL_ENGINEER':
+                status_data['chosable'] = True  # Default is true, so no need to change
+            elif role == 'PAYMENT_ADMIN':
+                if code in ['WAITING_PAYMENT', 'PAID']:
+                    status_data['chosable'] = True
+
+            statuses.append(status_data)
+
         return Response(statuses)
 
 
@@ -356,9 +410,9 @@ class PaymentViewSet(viewsets.ModelViewSet):
 #             work_id=work_id  # Use work_id from URL
 #         )
 class CommentViewSet(viewsets.ModelViewSet):
-
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated]
+
     def get_queryset(self):
         print(f"self.kwargs: {self.kwargs}")  # Print kwargs for debugging
         work_id = self.kwargs['work_pk']

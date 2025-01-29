@@ -104,7 +104,9 @@ class WorkItem(models.Model):
     STATUS_CHOICES = (
         ('PENDING', 'ממתין'),
         ('IN_PROGRESS', 'בביצוע'),
+        ('COMPLETED_BY_CONTRACTOR', 'בוצע על ידי הקבלן'),
         ('QUALITY_CONTROL', 'בקרת איכות'),
+        ('COMPLETED', 'בוצע'),
         ('WAITING_PAYMENT', 'ממתין לתשלום'),
         ('PAID', 'שולם'),
     )
@@ -114,7 +116,7 @@ class WorkItem(models.Model):
     contract_amount = models.DecimalField(max_digits=10, decimal_places=2)
     actual_amount = models.DecimalField(max_digits=10, decimal_places=2)
     unit_cost = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES)
     work_type = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
