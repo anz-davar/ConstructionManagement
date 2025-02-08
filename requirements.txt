@@ -2,3 +2,7 @@ dj_rest_auth==5.0.2
 Django==5.1.5
 django_allauth==0.60.0
 djangorestframework==3.14.0
+djangorestframework-simplejwt
+django-filter
+drf-nested-routers
+django-cors-headers
